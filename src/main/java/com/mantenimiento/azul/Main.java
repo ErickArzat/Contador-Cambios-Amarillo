@@ -2,6 +2,7 @@ package com.mantenimiento.azul;
 
 import com.mantenimiento.azul.checker.MultiInstanceChecker;
 import com.mantenimiento.azul.checker.ParenthesesChecker;
+import com.mantenimiento.azul.comparator.VersionComparator;
 import com.mantenimiento.azul.checker.Checker;
 import com.mantenimiento.azul.checker.EndBreakChecker;
 import com.mantenimiento.azul.checker.LeftCurlyBraceChecker;
@@ -13,8 +14,10 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Scanner;
+import java.util.Set;
 
 public class Main {
 
@@ -23,15 +26,20 @@ public class Main {
         String projectPath = args.length > 0 ? args[0] : ".";
         
         while (true) {
-            System.out.println("");
-            System.out.print("Introduzca la ruta del proyecto:");
-            String inputPath = scanner.nextLine().trim();
-            System.out.println("");
+            System.out.print("\nIntroduzca la ruta de la versión anterior: ");
+            String oldVersionPath = scanner.nextLine().trim();
             
-            if (!inputPath.isEmpty()) {
-                projectPath = inputPath;
-            }
+            System.out.print("\nIntroduzca la ruta de la nueva versión: ");
+            String newVersionPath = scanner.nextLine().trim();
+    
+            Set<Path> oldFiles = collectJavaFiles(oldVersionPath);
+            Set<Path> newFiles = collectJavaFiles(newVersionPath);
             
+            VersionComparator.ComparisonResult result = 
+                VersionComparator.compare(oldFiles, newFiles);
+            
+            printComparisonResults(result);    
+
             Checker checkerChain = createCheckerChain();
             CodeProcessor processor = new CodeProcessor(checkerChain);
 
@@ -50,6 +58,35 @@ public class Main {
         }
         
         scanner.close();
+    }
+
+    private static Set<Path> collectJavaFiles(String projectPath) {
+        Set<Path> javaFiles = new HashSet<>();
+        try {
+            Files.walkFileTree(Paths.get(projectPath), new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                    if (file.toString().endsWith(".java")) {
+                        javaFiles.add(file.toAbsolutePath().normalize());
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            System.err.println("Error al analizar el proyecto: " + e.getMessage());
+        }
+        return javaFiles;
+    }
+
+    private static void printComparisonResults(VersionComparator.ComparisonResult result) {
+        System.out.println("\n=== Resultados de Comparación ===");
+        System.out.println("Archivos nuevos: " + result.addedFiles.size());
+        result.addedFiles.forEach(p -> System.out.println("  [NUEVO] " + p));
+        
+        System.out.println("\nArchivos eliminados: " + result.removedFiles.size());
+        result.removedFiles.forEach(p -> System.out.println("  [ELIMINADO] " + p));
+        
+        System.out.println("\nArchivos sin cambios: " + result.unchangedFiles.size());
     }
     
     private static Checker createCheckerChain() {
