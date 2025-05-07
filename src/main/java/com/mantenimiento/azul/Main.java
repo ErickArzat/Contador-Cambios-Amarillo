@@ -31,14 +31,13 @@ public class Main {
             
             System.out.print("\nIntroduzca la ruta de la nueva versión: ");
             String newVersionPath = scanner.nextLine().trim();
-    
-            Set<Path> oldFiles = collectJavaFiles(oldVersionPath);
-            Set<Path> newFiles = collectJavaFiles(newVersionPath);
+
+            Set<String> oldFiles = collectJavaFiles(oldVersionPath);
+            Set<String> newFiles = collectJavaFiles(newVersionPath);
             
-            VersionComparator.ComparisonResult result = 
-                VersionComparator.compare(oldFiles, newFiles);
+            VersionComparator.ComparisonResult result = VersionComparator.compare(oldFiles, newFiles);
             
-            printComparisonResults(result);    
+            printComparisonResults(result);  
 
             Checker checkerChain = createCheckerChain();
             CodeProcessor processor = new CodeProcessor(checkerChain);
@@ -60,33 +59,37 @@ public class Main {
         scanner.close();
     }
 
-    private static Set<Path> collectJavaFiles(String projectPath) {
-        Set<Path> javaFiles = new HashSet<>();
+    private static Set<String> collectJavaFiles(String projectPath) {
+        Set<String> javaFiles = new HashSet<>();
+        Path root = Paths.get(projectPath).normalize().toAbsolutePath();
+        
         try {
-            Files.walkFileTree(Paths.get(projectPath), new SimpleFileVisitor<Path>() {
+            Files.walkFileTree(root, new SimpleFileVisitor<Path>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                    if (file.toString().endsWith(".java")) {
-                        javaFiles.add(file.toAbsolutePath().normalize());
+                    if (file.toString().toLowerCase().endsWith(".java")) {
+                        String relativePath = root.relativize(file).toString();
+                        javaFiles.add(relativePath);
                     }
                     return FileVisitResult.CONTINUE;
                 }
             });
         } catch (IOException e) {
-            System.err.println("Error al analizar el proyecto: " + e.getMessage());
+            System.err.println("Error: " + e.getMessage());
         }
         return javaFiles;
     }
 
     private static void printComparisonResults(VersionComparator.ComparisonResult result) {
-        System.out.println("\n=== Resultados de Comparación ===");
-        System.out.println("Archivos nuevos: " + result.addedFiles.size());
-        result.addedFiles.forEach(p -> System.out.println("  [NUEVO] " + p));
-        
-        System.out.println("\nArchivos eliminados: " + result.removedFiles.size());
-        result.removedFiles.forEach(p -> System.out.println("  [ELIMINADO] " + p));
-        
-        System.out.println("\nArchivos sin cambios: " + result.unchangedFiles.size());
+        System.out.println("\n=== Comparación de Versiones ===");
+        System.out.println("Archivos nuevos (" + result.addedFiles.size() + "):");
+        result.addedFiles.forEach(p -> System.out.println("  [A] " + p));
+
+        System.out.println("\nArchivos eliminados (" + result.removedFiles.size() + "):");
+        result.removedFiles.forEach(p -> System.out.println("  [D] " + p));
+
+        System.out.println("\nArchivos sin cambios (" + result.unchangedFiles.size() + "):");
+        result.unchangedFiles.forEach(p -> System.out.println("  [=] " + p));
     }
     
     private static Checker createCheckerChain() {
