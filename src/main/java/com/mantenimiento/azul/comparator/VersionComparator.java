@@ -1,28 +1,39 @@
 package com.mantenimiento.azul.comparator;
 
-import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 
 public class VersionComparator {
-    public static class ComparisonResult{
-        public Set<Path> addedFiles = new HashSet<>();
-        public Set<Path> removedFiles = new HashSet<>();
-        public Set<Path> unchangedFiles = new HashSet<>();
+    
+    public static class ComparisonResult {
+        public Set<String> addedFiles = new HashSet<>();
+        public Set<String> removedFiles = new HashSet<>();
+        public Set<String> unchangedFiles = new HashSet<>();
     }
 
-    public static ComparisonResult compare(Set<Path> version1, Set<Path> version2){
+    public static ComparisonResult compare(Set<String> version1, Set<String> version2) {
         ComparisonResult result = new ComparisonResult();
-
-        result.removedFiles.addAll(version1);
-        result.removedFiles.removeAll(version2);
-
-        result.addedFiles.addAll(version2);
-        result.addedFiles.removeAll(version1);
-
-        result.unchangedFiles.addAll(version1);
-        result.unchangedFiles.retainAll(version2);
-
+        
+        Set<String> v1 = normalizePaths(version1);
+        Set<String> v2 = normalizePaths(version2);
+        
+        result.removedFiles.addAll(v1);
+        result.removedFiles.removeAll(v2);
+        
+        result.addedFiles.addAll(v2);
+        result.addedFiles.removeAll(v1);
+        
+        result.unchangedFiles.addAll(v1);
+        result.unchangedFiles.retainAll(v2);
+        
         return result;
+    }
+
+    private static Set<String> normalizePaths(Set<String> paths) {
+        Set<String> normalized = new HashSet<>();
+        for (String path : paths) {
+            normalized.add(path.replace("\\", "/")); 
+        }
+        return normalized;
     }
 }
