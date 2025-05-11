@@ -4,10 +4,13 @@ import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;
+import com.itextpdf.layout.element.Cell;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Text;
 import com.itextpdf.layout.properties.TextAlignment;
-import com.mantenimiento.azul.comparator.VersionComparator.ComparisonResult;
+import com.itextpdf.layout.element.Table;
+import com.mantenimiento.azul.model.ComparisonResult;
+import com.mantenimiento.azul.model.FileStats;
 import com.mantenimiento.azul.model.FormattedLine;
 import com.mantenimiento.azul.processor.DiffProcessor;
 import com.mantenimiento.azul.utils.LineFormatter;
@@ -30,9 +33,9 @@ public class UnifiedDiffReport {
 
         doc.add(new Paragraph("REPORTE UNIFICADO DE CAMBIOS").setBold().setTextAlignment(TextAlignment.CENTER));
 
-        addRemovedFiles(result.removedFiles, doc, oldPath);
-        addAddedFiles(result.addedFiles, doc, newPath);
-        addModifiedFiles(result.modifiedFiles, doc, oldPath, newPath);
+        addRemovedFiles(result.getRemovedFiles(), doc, oldPath);
+        addAddedFiles(result.getAddedFiles(), doc, newPath);
+        addModifiedFiles(result.getModifiedFiles(), doc, oldPath, newPath);
 
         doc.close();
     }
@@ -91,4 +94,55 @@ public class UnifiedDiffReport {
             doc.add(new Paragraph("\n"));
         }
     }
+
+    public void printStatsReport(List<FileStats> results, String projectPath) throws IOException {
+        int totalPhysicalLines = 0;
+        int totalLines = 0;
+
+        String projectName = Path.of(projectPath).getFileName().toString();
+
+        PdfWriter writer = new PdfWriter("reporte_estadisticas_" + projectName + ".pdf");
+        PdfDocument pdf = new PdfDocument(writer);
+        Document doc = new Document(pdf);
+
+        doc.add(new Paragraph("REPORTE DE ESTADÍSTICAS DE PROYECTO").setBold().setFontSize(16).setTextAlignment(TextAlignment.CENTER));
+        doc.add(new Paragraph("Programa: " + projectName).setBold().setFontSize(12));
+
+        // Definimos la tabla con 6 columnas
+        float[] columnWidths = {160f, 60f, 80f, 80f, 90f, 90f};
+        Table table = new Table(columnWidths);
+        table.setWidth(100);
+
+        // Encabezado
+        table.addHeaderCell(new Cell().add(new Paragraph("Clase").setBold()));
+        table.addHeaderCell(new Cell().add(new Paragraph("Métodos").setBold()));
+        table.addHeaderCell(new Cell().add(new Paragraph("LOC físicas Clase").setBold()));
+        table.addHeaderCell(new Cell().add(new Paragraph("Líneas Clase").setBold()));
+        table.addHeaderCell(new Cell().add(new Paragraph("LOC físicas Programa").setBold()));
+        table.addHeaderCell(new Cell().add(new Paragraph("Líneas Programa").setBold()));
+
+        // Datos
+        for (FileStats stats : results) {
+            totalPhysicalLines += stats.physicalLines();
+            totalLines += stats.lines();
+
+            for (var cls : stats.classes()) {
+                table.addCell(cls.getName());
+                table.addCell(String.valueOf(cls.getMethodCount()));
+                table.addCell(String.valueOf(cls.getPhysicalLOC()));
+                table.addCell(String.valueOf(cls.getLines()));
+                table.addCell(""); // espacio en blanco
+                table.addCell("");
+            }
+        }
+
+        // Fila de totales
+        table.addCell(new Cell(1, 4).add(new Paragraph("Totales").setBold()));
+        table.addCell(new Paragraph(String.valueOf(totalPhysicalLines)).setBold());
+        table.addCell(new Paragraph(String.valueOf(totalLines)).setBold());
+
+        doc.add(table);
+        doc.close();
+    }
+
 }

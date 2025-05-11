@@ -8,20 +8,17 @@ import com.itextpdf.io.exceptions.IOException;
 import com.mantenimiento.azul.checker.Checker;
 import com.mantenimiento.azul.checker.CheckerFactory;
 import com.mantenimiento.azul.comparator.VersionComparator;
-import com.mantenimiento.azul.comparator.VersionComparator.ComparisonResult;
+import com.mantenimiento.azul.model.ComparisonResult;
 import com.mantenimiento.azul.model.FileStats;
 import com.mantenimiento.azul.processor.CodeProcessor;
 import com.mantenimiento.azul.report.UnifiedDiffReport;
 import com.mantenimiento.azul.utils.FileAnalyzer;
 import com.mantenimiento.azul.utils.FileUtils;
-import com.mantenimiento.azul.utils.ProjectReportPrinter;
 
 public class ProgramAnalyzer {
     private final Scanner scanner = new Scanner(System.in);
-    String projectPath;
 
-    public ProgramAnalyzer(String projectPath) {
-        this.projectPath = projectPath;
+    public ProgramAnalyzer() {
     }
 
      public void run(){
@@ -37,7 +34,8 @@ public class ProgramAnalyzer {
             generateReport(result, oldVersionPath, newVersionPath);
             printComparisonResults(result);
 
-            runCodeChecks(projectPath);
+            runCodeChecks(oldVersionPath);
+            runCodeChecks(newVersionPath);
 
             if (!prompt("¿Desea analizar otra ruta? (y/n): ").matches("(?i)y|yes")) break;
         }
@@ -65,10 +63,10 @@ public class ProgramAnalyzer {
 
     private void printComparisonResults(ComparisonResult result) {
         System.out.println("\n=== Comparación de Versiones ===");
-        printSection("Archivos nuevos", result.addedFiles, "A");
-        printSection("Archivos eliminados", result.removedFiles, "D");
-        printSection("Archivos modificados", result.modifiedFiles, "M");
-        printSection("Archivos sin cambios", result.unchangedFiles, "=");
+        printSection("Archivos nuevos", result.getAddedFiles(), "A");
+        printSection("Archivos eliminados", result.getRemovedFiles(), "D");
+        printSection("Archivos modificados", result.getModifiedFiles(), "M");
+        printSection("Archivos sin cambios", result.getUnchangedFiles(), "=");
     }
 
     private void printSection(String title, Set<String> files, String marker) {
@@ -76,12 +74,13 @@ public class ProgramAnalyzer {
         files.forEach(p -> System.out.println("  [" + marker + "] " + p));
     }
 
-    private void runCodeChecks(String path) {
+    private void runCodeChecks(String path) throws java.io.IOException {
         Checker checkerChain = CheckerFactory.createCheckerChain();
         CodeProcessor processor = new CodeProcessor(checkerChain);
         List<FileStats> results = FileAnalyzer.analyze(path, processor);
         if (!results.isEmpty()) {
-            ProjectReportPrinter.print(results, path);
+            UnifiedDiffReport report = new UnifiedDiffReport();
+            report.printStatsReport(results, path);
         }
     }
 }

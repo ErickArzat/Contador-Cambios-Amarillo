@@ -1,14 +1,14 @@
 package com.mantenimiento.azul.utils;
 
+import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.itextpdf.io.exceptions.IOException;
 
 public class FileUtils {
-    public static Set<String> collectJavaFiles(String projectPath) throws java.io.IOException {
+    public static Set<String> collectJavaFiles(String projectPath) throws IOException {
         Set<String> javaFiles = new HashSet<>();
         Path root = Paths.get(projectPath).toAbsolutePath().normalize();
 
