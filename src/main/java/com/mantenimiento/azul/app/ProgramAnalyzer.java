@@ -31,11 +31,12 @@ public class ProgramAnalyzer {
             Set<String> newFiles = FileUtils.collectJavaFiles(newVersionPath);
 
             ComparisonResult result = VersionComparator.compare(oldFiles, newFiles, oldVersionPath, newVersionPath);
+            
             generateReport(result, oldVersionPath, newVersionPath);
+            runCodeChecks(oldVersionPath, "Version_anterior");
+            runCodeChecks(newVersionPath, "Version_nueva");
+            
             printComparisonResults(result);
-
-            runCodeChecks(oldVersionPath);
-            runCodeChecks(newVersionPath);
 
             if (!prompt("¿Desea analizar otra ruta? (y/n): ").matches("(?i)y|yes")) break;
         }
@@ -54,8 +55,8 @@ public class ProgramAnalyzer {
 
     private void generateReport(ComparisonResult result, String oldPath, String newPath) throws java.io.IOException {
         try {
-            new UnifiedDiffReport().generate(result, oldPath, newPath, "cambios_unificados.pdf");
-            System.out.println("PDF unificado generado: cambios_unificados.pdf");
+            new UnifiedDiffReport().generate(result, oldPath, newPath, "Reporte_cambios.pdf");
+            System.out.println("PDF unificado generado: Reporte_cambios.pdf");
         } catch (IOException e) {
             System.err.println("Error generando el PDF unificado: " + e.getMessage());
         }
@@ -74,13 +75,13 @@ public class ProgramAnalyzer {
         files.forEach(p -> System.out.println("  [" + marker + "] " + p));
     }
 
-    private void runCodeChecks(String path) throws java.io.IOException {
+    private void runCodeChecks(String path, String version) throws java.io.IOException {
         Checker checkerChain = CheckerFactory.createCheckerChain();
         CodeProcessor processor = new CodeProcessor(checkerChain);
         List<FileStats> results = FileAnalyzer.analyze(path, processor);
         if (!results.isEmpty()) {
             UnifiedDiffReport report = new UnifiedDiffReport();
-            report.printStatsReport(results, path);
+            report.printStatsReport(results, path, version);
         }
     }
 }

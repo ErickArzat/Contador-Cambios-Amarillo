@@ -8,7 +8,7 @@ import java.util.Set;
 
 
 public class FileUtils {
-    public static Set<String> collectJavaFiles(String projectPath) throws IOException {
+    public static Set<String> collectJavaFiles(String projectPath) throws java.io.IOException {
         Set<String> javaFiles = new HashSet<>();
         Path root = Paths.get(projectPath).toAbsolutePath().normalize();
 

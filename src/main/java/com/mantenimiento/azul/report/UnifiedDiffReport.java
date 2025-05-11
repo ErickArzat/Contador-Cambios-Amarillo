@@ -15,6 +15,7 @@ import com.mantenimiento.azul.model.FormattedLine;
 import com.mantenimiento.azul.processor.DiffProcessor;
 import com.mantenimiento.azul.utils.LineFormatter;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -24,10 +25,14 @@ import java.util.Set;
 public class UnifiedDiffReport {
 
     private final LineFormatter formatter = new LineFormatter();
+    String desktopPath = System.getProperty("user.home") + File.separator + "Desktop" + File.separator + "Reporte_Equipo_8";
 
     public void generate(ComparisonResult result, String oldPath, String newPath, String outputPdf) throws IOException {
-
-        PdfWriter writer = new PdfWriter(outputPdf);
+        File directory = new File(desktopPath);
+        if (!directory.exists()) directory.mkdirs();
+        
+        File outputFile = new File(directory, outputPdf);
+        PdfWriter writer = new PdfWriter(outputFile.getAbsolutePath());
         PdfDocument pdf = new PdfDocument(writer);
         Document doc = new Document(pdf);
 
@@ -95,13 +100,21 @@ public class UnifiedDiffReport {
         }
     }
 
-    public void printStatsReport(List<FileStats> results, String projectPath) throws IOException {
+    public void printStatsReport(List<FileStats> results, String projectPath, String version) throws IOException {
         int totalPhysicalLines = 0;
         int totalLines = 0;
 
         String projectName = Path.of(projectPath).getFileName().toString();
+        String folderName = "Reporte_estadisticas_" + projectName + "_" + version + ".pdf";
 
-        PdfWriter writer = new PdfWriter("reporte_estadisticas_" + projectName + ".pdf");
+        File directory = new File(desktopPath);
+        if (!directory.exists()) {
+            directory.mkdirs();
+        }
+        
+
+        File outputFile = new File(directory, folderName);
+        PdfWriter writer = new PdfWriter(outputFile.getAbsolutePath());
         PdfDocument pdf = new PdfDocument(writer);
         Document doc = new Document(pdf);
 
@@ -143,6 +156,8 @@ public class UnifiedDiffReport {
 
         doc.add(table);
         doc.close();
+
+        System.out.println("Reporte generado: " + folderName);
     }
 
 }
