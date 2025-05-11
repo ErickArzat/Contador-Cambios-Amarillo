@@ -1,0 +1,87 @@
+package com.mantenimiento.azul.app;
+
+import java.util.Scanner;
+import java.util.Set;
+import java.util.List;
+
+import com.itextpdf.io.exceptions.IOException;
+import com.mantenimiento.azul.checker.Checker;
+import com.mantenimiento.azul.checker.CheckerFactory;
+import com.mantenimiento.azul.comparator.VersionComparator;
+import com.mantenimiento.azul.comparator.VersionComparator.ComparisonResult;
+import com.mantenimiento.azul.model.FileStats;
+import com.mantenimiento.azul.processor.CodeProcessor;
+import com.mantenimiento.azul.report.UnifiedDiffReport;
+import com.mantenimiento.azul.utils.FileAnalyzer;
+import com.mantenimiento.azul.utils.FileUtils;
+import com.mantenimiento.azul.utils.ProjectReportPrinter;
+
+public class ProgramAnalyzer {
+    private final Scanner scanner = new Scanner(System.in);
+    String projectPath;
+
+    public ProgramAnalyzer(String projectPath) {
+        this.projectPath = projectPath;
+    }
+
+     public void run(){
+        try {
+            while (true) {
+            String oldVersionPath = prompt("Introduzca la ruta de la versión anterior: ");
+            String newVersionPath = prompt("Introduzca la ruta de la nueva versión: ");
+
+            Set<String> oldFiles = FileUtils.collectJavaFiles(oldVersionPath);
+            Set<String> newFiles = FileUtils.collectJavaFiles(newVersionPath);
+
+            ComparisonResult result = VersionComparator.compare(oldFiles, newFiles, oldVersionPath, newVersionPath);
+            generateReport(result, oldVersionPath, newVersionPath);
+            printComparisonResults(result);
+
+            runCodeChecks(projectPath);
+
+            if (!prompt("¿Desea analizar otra ruta? (y/n): ").matches("(?i)y|yes")) break;
+        }
+        } catch (Exception e) {
+            System.err.println("Error: " + e.getMessage());
+        } finally {
+            this.scanner.close();
+        }
+        
+    }
+
+    private String prompt(String message) {
+        System.out.print(message);
+        return this.scanner.nextLine().trim();
+    }
+
+    private void generateReport(ComparisonResult result, String oldPath, String newPath) throws java.io.IOException {
+        try {
+            new UnifiedDiffReport().generate(result, oldPath, newPath, "cambios_unificados.pdf");
+            System.out.println("PDF unificado generado: cambios_unificados.pdf");
+        } catch (IOException e) {
+            System.err.println("Error generando el PDF unificado: " + e.getMessage());
+        }
+    }
+
+    private void printComparisonResults(ComparisonResult result) {
+        System.out.println("\n=== Comparación de Versiones ===");
+        printSection("Archivos nuevos", result.addedFiles, "A");
+        printSection("Archivos eliminados", result.removedFiles, "D");
+        printSection("Archivos modificados", result.modifiedFiles, "M");
+        printSection("Archivos sin cambios", result.unchangedFiles, "=");
+    }
+
+    private void printSection(String title, Set<String> files, String marker) {
+        System.out.println("\n" + title + " (" + files.size() + "):");
+        files.forEach(p -> System.out.println("  [" + marker + "] " + p));
+    }
+
+    private void runCodeChecks(String path) {
+        Checker checkerChain = CheckerFactory.createCheckerChain();
+        CodeProcessor processor = new CodeProcessor(checkerChain);
+        List<FileStats> results = FileAnalyzer.analyze(path, processor);
+        if (!results.isEmpty()) {
+            ProjectReportPrinter.print(results, path);
+        }
+    }
+}

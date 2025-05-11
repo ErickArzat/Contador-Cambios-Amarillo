@@ -3,10 +3,12 @@ package com.mantenimiento.azul;
 import com.mantenimiento.azul.checker.MultiInstanceChecker;
 import com.mantenimiento.azul.checker.ParenthesesChecker;
 import com.mantenimiento.azul.comparator.VersionComparator;
+import com.mantenimiento.azul.comparator.VersionComparator.ComparisonResult;
 import com.mantenimiento.azul.checker.Checker;
 import com.mantenimiento.azul.checker.EndBreakChecker;
 import com.mantenimiento.azul.checker.LeftCurlyBraceChecker;
 import com.mantenimiento.azul.processor.CodeProcessor;
+import com.mantenimiento.azul.report.UnifiedDiffReport;
 import com.mantenimiento.azul.exception.InvalidLineFormatException;
 import com.mantenimiento.azul.model.FileStats;
 
@@ -35,8 +37,16 @@ public class Main {
             Set<String> oldFiles = collectJavaFiles(oldVersionPath);
             Set<String> newFiles = collectJavaFiles(newVersionPath);
             
-            VersionComparator.ComparisonResult result = VersionComparator.compare(oldFiles, newFiles);
+            ComparisonResult result = VersionComparator.compare(oldFiles, newFiles, oldVersionPath, newVersionPath);
             
+            UnifiedDiffReport unifiedReport = new UnifiedDiffReport();
+            try {
+                unifiedReport.generate(result, oldVersionPath, newVersionPath, "cambios_unificados.pdf");
+                System.out.println("PDF unificado generado: cambios_unificados.pdf");
+            } catch (IOException e) {
+                System.err.println("Error generando el PDF unificado: " + e.getMessage());
+            }
+
             printComparisonResults(result);  
 
             Checker checkerChain = createCheckerChain();
@@ -80,13 +90,16 @@ public class Main {
         return javaFiles;
     }
 
-    private static void printComparisonResults(VersionComparator.ComparisonResult result) {
+    private static void printComparisonResults(ComparisonResult result) {
         System.out.println("\n=== Comparación de Versiones ===");
         System.out.println("Archivos nuevos (" + result.addedFiles.size() + "):");
         result.addedFiles.forEach(p -> System.out.println("  [A] " + p));
 
         System.out.println("\nArchivos eliminados (" + result.removedFiles.size() + "):");
         result.removedFiles.forEach(p -> System.out.println("  [D] " + p));
+
+        System.out.println("\nArchivos modificados (" + result.modifiedFiles.size() + "):");
+        result.modifiedFiles.forEach(p -> System.out.println("  [M] " + p));
 
         System.out.println("\nArchivos sin cambios (" + result.unchangedFiles.size() + "):");
         result.unchangedFiles.forEach(p -> System.out.println("  [=] " + p));
@@ -127,8 +140,7 @@ public class Main {
 
     private static void processFile(Path file, CodeProcessor processor, List<FileStats> results) {
         try {
-            FileStats stats = processor.processFile(file);
-            results.add(stats);
+            results.add(processor.processFile(file));
         } catch (InvalidLineFormatException e) {
             System.err.println("Error en " + file + ": " + e.getMessage());
         } catch (IOException e) {
