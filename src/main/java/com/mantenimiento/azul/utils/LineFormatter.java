@@ -51,6 +51,9 @@ public class LineFormatter {
                     case "borrada":
                         lineText.setFontColor(ColorConstants.RED);
                         break;
+                    case "modificada":
+                        lineText.setFontColor(ColorConstants.ORANGE);
+                        break;
                 }
             }
             formattedTexts.add(lineText);

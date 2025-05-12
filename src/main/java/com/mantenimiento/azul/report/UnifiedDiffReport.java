@@ -55,8 +55,11 @@ public class UnifiedDiffReport {
             List<String> lines = Files.readAllLines(path);
 
             for (int i = 0; i < lines.size(); i++) {
-                Text t = new Text(String.format("%4d | %s", i + 1, lines.get(i))).setFontColor(ColorConstants.RED);
-                doc.add(new Paragraph().add(t));
+                FormattedLine line = new FormattedLine(i + 1, lines.get(i), "borrada", false);
+                List<Text> formatted = formatter.formatLine(line);
+                for (Text t : formatted) {
+                    doc.add(new Paragraph().add(t));
+                }
             }
             doc.add(new Paragraph("\n"));
         }
@@ -69,8 +72,11 @@ public class UnifiedDiffReport {
             doc.add(new Paragraph("Archivo añadido: " + file).setBold());
             List<String> lines = Files.readAllLines(path);
             for (int i = 0; i < lines.size(); i++) {
-                Text t = new Text(String.format("%4d | %s", i + 1, lines.get(i))).setFontColor(ColorConstants.GREEN);
-                doc.add(new Paragraph().add(t));
+                FormattedLine line = new FormattedLine(i + 1, lines.get(i), "añadida", false);
+                List<Text> formatted = formatter.formatLine(line);
+                for (Text t : formatted) {
+                    doc.add(new Paragraph().add(t));
+                }
             }
             doc.add(new Paragraph("\n"));
         }

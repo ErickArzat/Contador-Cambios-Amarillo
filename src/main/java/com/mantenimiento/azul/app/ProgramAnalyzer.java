@@ -21,7 +21,7 @@ public class ProgramAnalyzer {
     public ProgramAnalyzer() {
     }
 
-     public void run(){
+    public void run(){
         try {
             while (true) {
             String oldVersionPath = prompt("Introduzca la ruta de la versión anterior: ");
@@ -31,7 +31,7 @@ public class ProgramAnalyzer {
             Set<String> newFiles = FileUtils.collectJavaFiles(newVersionPath);
 
             ComparisonResult result = VersionComparator.compare(oldFiles, newFiles, oldVersionPath, newVersionPath);
-            
+
             generateReport(result, oldVersionPath, newVersionPath);
             runCodeChecks(oldVersionPath, "Version_anterior");
             runCodeChecks(newVersionPath, "Version_nueva");
@@ -56,7 +56,7 @@ public class ProgramAnalyzer {
     private void generateReport(ComparisonResult result, String oldPath, String newPath) throws java.io.IOException {
         try {
             new UnifiedDiffReport().generate(result, oldPath, newPath, "Reporte_cambios.pdf");
-            System.out.println("PDF unificado generado: Reporte_cambios.pdf");
+            System.out.println("Reporte de cambios generado: Reporte_cambios.pdf");
         } catch (IOException e) {
             System.err.println("Error generando el PDF unificado: " + e.getMessage());
         }
