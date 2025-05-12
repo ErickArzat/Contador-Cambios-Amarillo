@@ -1,6 +1,6 @@
 package com.mantenimiento.azul.report;
 
-import com.itextpdf.kernel.colors.ColorConstants;
+import com.itextpdf.kernel.geom.Line;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;
@@ -12,6 +12,7 @@ import com.itextpdf.layout.element.Table;
 import com.mantenimiento.azul.model.ComparisonResult;
 import com.mantenimiento.azul.model.FileStats;
 import com.mantenimiento.azul.model.FormattedLine;
+import com.mantenimiento.azul.model.LineCounter;
 import com.mantenimiento.azul.processor.DiffProcessor;
 import com.mantenimiento.azul.utils.LineFormatter;
 
@@ -23,6 +24,7 @@ import java.util.List;
 import java.util.Set;
 
 public class UnifiedDiffReport {
+    LineCounter totalCounter = new LineCounter();
 
     private final LineFormatter formatter = new LineFormatter();
     String desktopPath = System.getProperty("user.home") + File.separator + "Desktop" + File.separator + "Reporte_Equipo_8";
@@ -42,48 +44,72 @@ public class UnifiedDiffReport {
         addAddedFiles(result.getAddedFiles(), doc, newPath);
         addModifiedFiles(result.getModifiedFiles(), doc, oldPath, newPath);
 
+        
+        doc.add(new Paragraph("TOTAL DE LINEAS AÑADIDAS Y ELIMINADAS").setBold().setTextAlignment(TextAlignment.CENTER));
+        doc.add(new Paragraph("Total de líneas añadidas en todo el proyecto: " + totalCounter.getAdded()).setBold());
+        doc.add(new Paragraph("Total de líneas borradas en todo el proyecto: " + totalCounter.getRemoved()).setBold());
         doc.close();
     }
 
     private void addRemovedFiles(Set<String> removedFiles, Document doc, String oldPath) throws IOException {
+        LineCounter removedCounter;
         for (String file : removedFiles) {
+            removedCounter = new LineCounter();
             Path path = Path.of(oldPath, file);
 
             if (!Files.exists(path)) continue;
 
-            doc.add(new Paragraph("Archivo eliminado: " + file).setBold());
             List<String> lines = Files.readAllLines(path);
+
+            doc.add(new Paragraph("Archivo eliminado: " + file).setBold());
+            doc.add(new Paragraph("Total de líneas eliminadas: " + lines.size()).setBold());
+            doc.add(new Paragraph("\n"));
 
             for (int i = 0; i < lines.size(); i++) {
                 FormattedLine line = new FormattedLine(i + 1, lines.get(i), "borrada", false);
-                List<Text> formatted = formatter.formatLine(line);
+                List<Text> formatted = formatter.formatLine(line, removedCounter);
                 for (Text t : formatted) {
                     doc.add(new Paragraph().add(t));
                 }
             }
+            totalCounter.addRemoved(removedCounter.getRemoved());
+            doc.add(new Paragraph("Total de líneas eliminadas en este archivo: " + removedCounter.getRemoved()).setBold());
             doc.add(new Paragraph("\n"));
         }
     }
 
     private void addAddedFiles(Set<String> addedFiles, Document doc, String newPath) throws IOException {
+        LineCounter addedCounter;
         for (String file : addedFiles) {
+            addedCounter = new LineCounter();
             Path path = Path.of(newPath, file);
+
             if (!Files.exists(path)) continue;
-            doc.add(new Paragraph("Archivo añadido: " + file).setBold());
+            
             List<String> lines = Files.readAllLines(path);
+            
+            doc.add(new Paragraph("Archivo añadido: " + file).setBold());
+            
             for (int i = 0; i < lines.size(); i++) {
                 FormattedLine line = new FormattedLine(i + 1, lines.get(i), "añadida", false);
-                List<Text> formatted = formatter.formatLine(line);
+                List<Text> formatted = formatter.formatLine(line, addedCounter);
                 for (Text t : formatted) {
                     doc.add(new Paragraph().add(t));
                 }
             }
+
+            totalCounter.addAdded(addedCounter.getAdded());
+            doc.add(new Paragraph("Total de líneas añadidas en este archivo: " + addedCounter.getAdded()).setBold());
             doc.add(new Paragraph("\n"));
         }
     }
 
     private void addModifiedFiles(Set<String> modifiedFiles, Document doc, String oldPath, String newPath) throws IOException {
+        LineCounter modifiedCounter;
+
         for (String file : modifiedFiles) {
+            modifiedCounter = new LineCounter();
+
             Path oldF = Path.of(oldPath, file);
             Path newF = Path.of(newPath, file);
             if (!Files.exists(oldF) || !Files.exists(newF)) continue;
@@ -97,13 +123,19 @@ public class UnifiedDiffReport {
             List<FormattedLine> diffs = processor.generateDiff();
 
             for (FormattedLine line : diffs) {
-                for (Text t : formatter.formatLine(line)) {
+                for (Text t : formatter.formatLine(line, modifiedCounter)) {
                     doc.add(new Paragraph().add(t));
                 }
             }
 
+            totalCounter.addAdded(modifiedCounter.getAdded());
+            totalCounter.addRemoved(modifiedCounter.getRemoved());
+
+            doc.add(new Paragraph("Total de líneas añadidas en este archivo: " + modifiedCounter.getAdded()).setBold());
+            doc.add(new Paragraph("Total de líneas eliminadas en este archivo: " + modifiedCounter.getRemoved()).setBold());
             doc.add(new Paragraph("\n"));
         }
+
     }
 
     public void printStatsReport(List<FileStats> results, String projectPath, String version) throws IOException {

@@ -3,6 +3,7 @@ package com.mantenimiento.azul.utils;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.layout.element.Text;
 import com.mantenimiento.azul.model.FormattedLine;
+import com.mantenimiento.azul.model.LineCounter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,7 +12,7 @@ public class LineFormatter {
 
     private final int MAX_CONTENT_LENGTH = 80;
     
-    public List<Text> formatLine(FormattedLine line) {
+    public List<Text> formatLine(FormattedLine line, LineCounter AuxCounter) {
         List<Text> formattedTexts = new ArrayList<>();
 
         String content = line.content.stripLeading();
@@ -47,9 +48,11 @@ public class LineFormatter {
                 switch (line.changeType) {
                     case "añadida":
                         lineText.setFontColor(ColorConstants.GREEN);
+                        AuxCounter.incrementAdded();
                         break;
                     case "borrada":
                         lineText.setFontColor(ColorConstants.RED);
+                        AuxCounter.incrementRemoved();
                         break;
                     case "modificada":
                         lineText.setFontColor(ColorConstants.ORANGE);

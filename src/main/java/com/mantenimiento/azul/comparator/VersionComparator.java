@@ -12,8 +12,7 @@ import com.mantenimiento.azul.model.ComparisonResult;
 
 public class VersionComparator {
     
-    public static ComparisonResult compare(Set<String> version1, Set<String> version2,
-                                       String oldBasePath, String newBasePath) {
+    public static ComparisonResult compare(Set<String> version1, Set<String> version2, String oldBasePath, String newBasePath) {
         ComparisonResult result = new ComparisonResult();
 
         Set<String> v1 = normalizePaths(version1);
