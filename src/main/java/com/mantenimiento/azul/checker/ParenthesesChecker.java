@@ -5,10 +5,6 @@ import com.mantenimiento.azul.exception.InvalidLineFormatException;
 import com.mantenimiento.azul.utils.Regex;
 
 public class ParenthesesChecker extends Checker {
-
-    public ParenthesesChecker() {
-    }
-
     @Override
     public void pass(List<String> codeStream) throws InvalidLineFormatException {
 
