@@ -1,6 +1,5 @@
 package com.mantenimiento.azul.report;
 
-import com.itextpdf.kernel.geom.Line;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;

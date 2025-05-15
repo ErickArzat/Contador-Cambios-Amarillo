@@ -18,9 +18,6 @@ import com.mantenimiento.azul.utils.FileUtils;
 public class ProgramAnalyzer {
     private final Scanner scanner = new Scanner(System.in);
 
-    public ProgramAnalyzer() {
-    }
-
     public void run(){
         try {
             while (true) {

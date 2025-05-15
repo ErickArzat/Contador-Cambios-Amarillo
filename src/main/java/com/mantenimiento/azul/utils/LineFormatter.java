@@ -48,11 +48,16 @@ public class LineFormatter {
                 switch (line.changeType) {
                     case "añadida":
                         lineText.setFontColor(ColorConstants.GREEN);
-                        AuxCounter.incrementAdded();
+                        if(!prefix.equals("     |     ")) {
+                            AuxCounter.incrementAdded();
+                        }
+                        
                         break;
                     case "borrada":
                         lineText.setFontColor(ColorConstants.RED);
-                        AuxCounter.incrementRemoved();
+                        if(!prefix.equals("     |     ")) {
+                            AuxCounter.incrementAdded();
+                        }
                         break;
                     case "modificada":
                         lineText.setFontColor(ColorConstants.ORANGE);
