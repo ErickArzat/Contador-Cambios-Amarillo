@@ -30,7 +30,10 @@ public class UnifiedDiffReport {
 
     public void generate(ComparisonResult result, String oldPath, String newPath, String outputPdf) throws IOException {
         File directory = new File(desktopPath);
-        if (!directory.exists()) directory.mkdirs();
+        if (!directory.exists()){
+            directory.mkdirs();
+            System.out.println("Carpeta creada: " + directory.getAbsolutePath());
+        } 
         
         File outputFile = new File(directory, outputPdf);
         PdfWriter writer = new PdfWriter(outputFile.getAbsolutePath());

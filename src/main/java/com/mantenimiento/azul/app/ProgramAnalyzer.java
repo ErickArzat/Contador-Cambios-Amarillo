@@ -32,8 +32,10 @@ public class ProgramAnalyzer {
             generateReport(result, oldVersionPath, newVersionPath);
             runCodeChecks(oldVersionPath, "Version_anterior");
             runCodeChecks(newVersionPath, "Version_nueva");
-            
+
             printComparisonResults(result);
+            
+            System.out.println("Reportes guardados en la carpeta de escritorio. \n");
 
             if (!prompt("¿Desea analizar otra ruta? (y/n): ").matches("(?i)y|yes")) break;
         }
@@ -65,6 +67,7 @@ public class ProgramAnalyzer {
         printSection("Archivos eliminados", result.getRemovedFiles(), "D");
         printSection("Archivos modificados", result.getModifiedFiles(), "M");
         printSection("Archivos sin cambios", result.getUnchangedFiles(), "=");
+        System.out.println("\n");
     }
 
     private void printSection(String title, Set<String> files, String marker) {
@@ -77,8 +80,7 @@ public class ProgramAnalyzer {
         CodeProcessor processor = new CodeProcessor(checkerChain);
         List<FileStats> results = FileAnalyzer.analyze(path, processor);
         if (!results.isEmpty()) {
-            UnifiedDiffReport report = new UnifiedDiffReport();
-            report.printStatsReport(results, path, version);
+            new UnifiedDiffReport().printStatsReport(results, path, version);
         }
     }
 }
